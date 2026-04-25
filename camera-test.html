@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <video id="video" width="100%" height="auto" autoplay playsinline></video>
+    <button id="start">カメラ起動</button>
+
+    <script>
+        const video = document.getElementById('video');
+        const button = document.getElementById('start');
+
+        button.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" },
+                    audio: false
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("エラー内容:", err);
+                alert("カメラを起動できませんでした: " + err.message);
+            }
+        });
+    </script>
+</body>
+</html>
