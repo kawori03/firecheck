@@ -302,16 +302,17 @@
         <div class="saved-badge" id="saved-badge" style="display:none;">前回の写真</div>
       </div>
       <div style="margin-top:12px; display:flex; gap:10px;">
-        <button onclick="openCamera()" style="flex:1; padding:13px; border-radius:12px; font-size:15px; font-weight:600; border:none; cursor:pointer; background:#1c1c1e; color:#fff;">📷 カメラ</button>
-        <button onclick="document.getElementById('file-gallery').click()" style="flex:1; padding:13px; border-radius:12px; font-size:15px; font-weight:600; border:1.5px solid #e8e5df; cursor:pointer; background:#fff; color:#1c1c1e;">🖼 ギャラリー</button>
+        <button id="btn-camera" style="flex:1; padding:13px; border-radius:12px; font-size:15px; font-weight:600; border:none; cursor:pointer; background:#1c1c1e; color:#fff;">📷 カメラ</button>
+        <button id="btn-gallery" style="flex:1; padding:13px; border-radius:12px; font-size:15px; font-weight:600; border:1.5px solid #e8e5df; cursor:pointer; background:#fff; color:#1c1c1e;">🖼 ギャラリー</button>
       </div>
       <input type="file" id="file-gallery" accept="image/*" onchange="onPhoto(event)">
+      <input type="file" id="file-camera-input" accept="image/*" capture="user" onchange="onPhoto(event)">
       <!-- camera stream -->
-      <div id="camera-modal" style="display:none; position:fixed; inset:0; background:#000; z-index:999; flex-direction:column;">
-        <video id="camera-video" autoplay playsinline style="width:100%; flex:1; object-fit:cover;"></video>
-        <div style="display:flex; gap:12px; padding:20px; background:#000; justify-content:center; align-items:center;">
-          <button onclick="closeCamera()" style="padding:12px 24px; border-radius:30px; border:1.5px solid #fff; background:transparent; color:#fff; font-size:15px; cursor:pointer;">キャンセル</button>
-          <button onclick="capturePhoto()" style="width:70px; height:70px; border-radius:50%; border:4px solid #fff; background:#fff; font-size:28px; cursor:pointer;">📷</button>
+      <div id="camera-modal" style="display:none; position:fixed; inset:0; background:#000; z-index:9999; flex-direction:column;">
+        <video id="camera-video" autoplay playsinline muted style="width:100%; flex:1; object-fit:cover; display:block;"></video>
+        <div style="display:flex; gap:12px; padding:24px 20px; background:#111; justify-content:center; align-items:center;">
+          <button id="btn-close-cam" style="padding:12px 24px; border-radius:30px; border:1.5px solid #fff; background:transparent; color:#fff; font-size:15px; cursor:pointer;">キャンセル</button>
+          <button id="btn-capture" style="width:72px; height:72px; border-radius:50%; border:5px solid #fff; background:#fff; font-size:30px; cursor:pointer;">📷</button>
         </div>
         <canvas id="camera-canvas" style="display:none;"></canvas>
       </div>
@@ -459,7 +460,7 @@ function onPhoto(e) {
 
 function retake(e) {
   e.stopPropagation();
-  document.getElementById('file-camera').click();
+  document.getElementById('file-camera-input').click();
 }
 
 /* ---- Check ---- */
@@ -573,6 +574,61 @@ function switchTab(name) {
     doneTime = new Date(savedDt);
   }
   updateBtn();
+
+  // Setup camera and gallery buttons
+  document.getElementById('btn-gallery').addEventListener('click', function() {
+    document.getElementById('file-gallery').click();
+  });
+
+  document.getElementById('btn-camera').addEventListener('click', async function() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      const modal = document.getElementById('camera-modal');
+      modal.style.display = 'flex';
+      modal.style.flexDirection = 'column';
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        });
+        window._cameraStream = stream;
+        const video = document.getElementById('camera-video');
+        video.srcObject = stream;
+        video.play();
+      } catch(err) {
+        modal.style.display = 'none';
+        document.getElementById('file-camera-input').click();
+      }
+    } else {
+      document.getElementById('file-camera-input').click();
+    }
+  });
+
+  document.getElementById('btn-close-cam').addEventListener('click', function() {
+    if (window._cameraStream) {
+      window._cameraStream.getTracks().forEach(t => t.stop());
+      window._cameraStream = null;
+    }
+    document.getElementById('camera-modal').style.display = 'none';
+  });
+
+  document.getElementById('btn-capture').addEventListener('click', function() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    photoDataUrl = dataUrl;
+    try { localStorage.setItem(LS_PHOTO, dataUrl); } catch(e) {}
+    showPhotoUI(dataUrl, false, new Date());
+    updateBtn();
+    if (window._cameraStream) {
+      window._cameraStream.getTracks().forEach(t => t.stop());
+      window._cameraStream = null;
+    }
+    document.getElementById('camera-modal').style.display = 'none';
+  });
+
 })();
 </script>
 </body>
