@@ -282,18 +282,22 @@
     </div>
     <div class="content">
       <div class="section-label">ガスコンロの写真</div>
-      <div class="photo-box" id="photo-box" onclick="document.getElementById('file-input').click()">
+      <div class="photo-box" id="photo-box">
         <div class="photo-cam" id="photo-cam">📷</div>
-        <div class="photo-hint" id="photo-hint">タップして撮影</div>
+        <div class="photo-hint" id="photo-hint">下のボタンから撮影してください</div>
         <img id="preview-img" style="display:none;" alt="ガスコンロの写真" />
         <div class="photo-overlay" id="photo-overlay" style="display:none;"></div>
         <div class="photo-stamp" id="photo-stamp-home" style="display:none;">
           <div><div class="photo-stamp-label">ガスコンロ</div><div class="photo-stamp-dt" id="home-stamp-dt"></div></div>
         </div>
-        <button class="retake-btn" id="retake-btn" style="display:none;" onclick="retake(event)">撮り直す</button>
         <div class="saved-badge" id="saved-badge" style="display:none;">前回の写真</div>
       </div>
-      <input type="file" id="file-input" accept="image/*" onchange="onPhoto(event)">
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button onclick="document.getElementById('file-camera').click()" style="flex:1; padding:13px; border-radius:12px; font-size:15px; font-weight:600; border:none; cursor:pointer; background:#1c1c1e; color:#fff;">📷 カメラで撮影</button>
+        <button onclick="document.getElementById('file-gallery').click()" style="flex:1; padding:13px; border-radius:12px; font-size:15px; font-weight:600; border:1.5px solid #e8e5df; cursor:pointer; background:#fff; color:#1c1c1e;">🖼 ギャラリー</button>
+      </div>
+      <input type="file" id="file-camera" accept="image/*" capture="environment" onchange="onPhoto(event)">
+      <input type="file" id="file-gallery" accept="image/*" onchange="onPhoto(event)">
 
       <div class="check-section">
         <div class="section-label" style="margin-top:20px;">確認</div>
@@ -417,7 +421,7 @@ function showPhotoUI(src, isSaved, dt) {
   document.getElementById('photo-hint').style.display = 'none';
   document.getElementById('photo-overlay').style.display = 'block';
   document.getElementById('photo-stamp-home').style.display = 'flex';
-  document.getElementById('retake-btn').style.display = 'block';
+  
   document.getElementById('saved-badge').style.display = isSaved ? 'block' : 'none';
   document.getElementById('photo-box').classList.add('has-photo');
   if (dt) document.getElementById('home-stamp-dt').textContent = fmtDatetime(dt);
@@ -438,7 +442,7 @@ function onPhoto(e) {
 
 function retake(e) {
   e.stopPropagation();
-  document.getElementById('file-input').click();
+  document.getElementById('file-camera').click();
 }
 
 /* ---- Check ---- */
