@@ -301,12 +301,9 @@
         </div>
         <div class="saved-badge" id="saved-badge" style="display:none;">前回の写真</div>
       </div>
-      <div style="margin-top:12px; display:flex; gap:10px;">
-        <button id="btn-camera" style="flex:1; padding:13px; border-radius:12px; font-size:15px; font-weight:600; border:none; cursor:pointer; background:#1c1c1e; color:#fff;">📷 カメラ</button>
-        <button id="btn-gallery" style="flex:1; padding:13px; border-radius:12px; font-size:15px; font-weight:600; border:1.5px solid #e8e5df; cursor:pointer; background:#fff; color:#1c1c1e;">🖼 ギャラリー</button>
+      <div style="margin-top:12px;">
+        <button id="btn-camera" style="width:100%; padding:15px; border-radius:12px; font-size:16px; font-weight:600; border:none; cursor:pointer; background:#1c1c1e; color:#fff;">📷 カメラで撮影</button>
       </div>
-      <input type="file" id="file-gallery" accept="image/*" onchange="onPhoto(event)">
-      <input type="file" id="file-camera-input" accept="image/*" capture="user" onchange="onPhoto(event)">
       <!-- camera stream -->
       <div id="camera-modal" style="display:none; position:fixed; inset:0; background:#000; z-index:9999; flex-direction:column;">
         <video id="camera-video" autoplay playsinline muted style="width:100%; flex:1; object-fit:cover; display:block;"></video>
@@ -380,7 +377,7 @@
           <span class="review-check-icon">✓</span>
           <span>ガスコンロの火：消火確認済み</span>
         </div>
-        <button class="btn-secondary" onclick="switchTab('home')">新しく確認する</button>
+        <button class="btn-secondary" onclick="clearAndStart()">新しく確認する</button>
       </div>
     </div>
     <!-- 記録なし -->
@@ -575,11 +572,31 @@ function switchTab(name) {
   }
   updateBtn();
 
-  // Setup camera and gallery buttons
-  document.getElementById('btn-gallery').addEventListener('click', function() {
-    document.getElementById('file-gallery').click();
-  });
+  /* ---- Clear & restart ---- */
+  function clearAndStart() {
+    photoDataUrl = null;
+    isChecked = false;
+    doneTime = null;
+    try { localStorage.removeItem(LS_PHOTO); } catch(e) {}
+    try { localStorage.removeItem(LS_DATETIME); } catch(e) {}
+    // Reset photo UI
+    document.getElementById('preview-img').style.display = 'none';
+    document.getElementById('preview-img').src = '';
+    document.getElementById('photo-cam').style.display = '';
+    document.getElementById('photo-hint').style.display = '';
+    document.getElementById('photo-overlay').style.display = 'none';
+    document.getElementById('photo-stamp-home').style.display = 'none';
+    document.getElementById('saved-badge').style.display = 'none';
+    document.getElementById('photo-box').classList.remove('has-photo');
+    // Reset check
+    document.getElementById('check-item').classList.remove('checked');
+    document.getElementById('check-circle').textContent = '';
+    updateBtn();
+    showScreen('home');
+    setTabActive('home');
+  }
 
+  // Setup camera button
   document.getElementById('btn-camera').addEventListener('click', async function() {
     const modal = document.getElementById('camera-modal');
     modal.style.display = 'flex';
