@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>火の確認</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: #f0ede8; font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; }
+
+  .app {
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: #faf9f6;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    background: #1c1c1e;
+    color: #fff;
+    font-size: 12px;
+    padding: 10px 18px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  /* SCREENS */
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+
+  /* HEADER */
+  .header {
+    background: #1c1c1e;
+    color: #fff;
+    padding: 20px 20px 18px;
+  }
+  .header-title { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  .header-sub { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 3px; }
+
+  /* CONTENT */
+  .content { flex: 1; padding: 20px 16px; overflow-y: auto; }
+
+  /* PHOTO */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .photo-box {
+    width: 100%;
+    height: 220px;
+    border-radius: 16px;
+    background: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border: 2px dashed #ccc;
+    transition: border-color 0.2s;
+  }
+  .photo-box.has-photo { border: none; }
+  .photo-box img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .photo-cam { font-size: 36px; }
+  .photo-hint { font-size: 14px; color: #999; }
+  .photo-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%);
+  }
+  .photo-stamp {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 10px 14px;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 12px;
+  }
+  .photo-stamp-label { font-size: 11px; opacity: 0.7; }
+  .photo-stamp-dt { font-size: 13px; font-weight: 500; }
+  .retake-btn {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(0,0,0,0.5);
+    color: #fff; font-size: 12px;
+    padding: 5px 12px; border-radius: 20px;
+    border: none; cursor: pointer;
+    backdrop-filter: blur(4px);
+  }
+  .saved-badge {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(0,0,0,0.45);
+    color: #fff; font-size: 11px;
+    padding: 4px 10px; border-radius: 20px;
+    backdrop-filter: blur(4px);
+  }
+  input[type=file] { display: none; }
+
+  /* CHECK */
+  .check-section { margin-top: 16px; }
+  .check-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 16px;
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #e8e5df;
+    cursor: pointer;
+    transition: all 0.18s;
+    user-select: none;
+  }
+  .check-item.checked {
+    background: #f0f9f0;
+    border-color: #4caf6e;
+  }
+  .check-circle {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.18s;
+    font-size: 14px; color: transparent;
+  }
+  .check-item.checked .check-circle {
+    background: #4caf6e;
+    border-color: #4caf6e;
+    color: #fff;
+  }
+  .check-text { font-size: 16px; color: #1c1c1e; }
+  .check-item.checked .check-text { color: #2d7a47; }
+
+  /* CTA */
+  .cta { padding: 16px; background: #faf9f6; border-top: 1px solid #eee; flex-shrink: 0; }
+  .btn-main {
+    width: 100%; padding: 16px;
+    border-radius: 14px;
+    font-size: 17px; font-weight: 600;
+    border: none; cursor: pointer;
+    background: #1c1c1e; color: #fff;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: -0.3px;
+  }
+  .btn-main:disabled {
+    background: #e5e3df; color: #aaa; cursor: default;
+  }
+  .btn-main:not(:disabled):active { transform: scale(0.98); }
+  .cta-hint {
+    font-size: 12px; color: #aaa;
+    text-align: center; margin-top: 8px;
+  }
+
+  /* DONE SCREEN */
+  .done-hero {
+    background: #1c1c1e;
+    padding: 36px 20px 32px;
+    text-align: center;
+    color: #fff;
+  }
+  .done-icon { font-size: 52px; margin-bottom: 12px; }
+  .done-title { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .done-sub { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 6px; line-height: 1.6; }
+
+  .proof-section { padding: 20px 16px; }
+  .proof-card {
+    background: #fff; border-radius: 16px;
+    border: 1.5px solid #e8e5df;
+    overflow: hidden;
+  }
+  .proof-photo { position: relative; }
+  .proof-photo img { width: 100%; display: block; max-height: 200px; object-fit: cover; }
+  .proof-rows { padding: 4px 0; }
+  .proof-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 13px 16px;
+    border-bottom: 1px solid #f0ede8;
+    font-size: 14px;
+  }
+  .proof-row:last-child { border-bottom: none; }
+  .proof-key { color: #888; }
+  .proof-val { color: #2d7a47; font-weight: 500; }
+
+  .btn-review-wrap { padding: 0 16px 24px; }
+  .btn-review {
+    width: 100%; padding: 15px;
+    border-radius: 14px; font-size: 16px; font-weight: 600;
+    border: none; cursor: pointer;
+    background: #f0f0f0; color: #1c1c1e;
+    letter-spacing: -0.3px;
+  }
+
+  /* REVIEW SCREEN */
+  .review-hero {
+    background: #1c1c1e;
+    padding: 40px 20px 36px;
+    text-align: center;
+    color: #fff;
+  }
+  .review-big { font-size: 56px; margin-bottom: 10px; }
+  .review-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .review-dt { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 6px; }
+
+  .review-body { padding: 20px 16px 24px; }
+  .review-photo-frame {
+    border-radius: 16px; overflow: hidden;
+    border: 1.5px solid #e8e5df;
+    position: relative; margin-bottom: 14px;
+  }
+  .review-photo-frame img { width: 100%; display: block; max-height: 220px; object-fit: cover; }
+  .review-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    background: #f0f9f0; border-radius: 12px;
+    font-size: 15px; color: #2d7a47;
+    margin-bottom: 10px;
+  }
+  .review-check-icon { font-size: 18px; }
+  .btn-secondary {
+    width: 100%; padding: 14px;
+    border-radius: 14px; font-size: 15px; font-weight: 500;
+    border: 1.5px solid #e8e5df; cursor: pointer;
+    background: #fff; color: #1c1c1e;
+    margin-top: 6px;
+  }
+
+  /* NO RECORD */
+  .no-record {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center; color: #aaa;
+    gap: 12px;
+  }
+  .no-record-icon { font-size: 40px; opacity: 0.4; }
+  .no-record-text { font-size: 15px; line-height: 1.7; }
+
+  /* TABS */
+  .tabs {
+    display: flex; background: #fff;
+    border-top: 1px solid #e8e5df;
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1; padding: 12px 8px 14px;
+    font-size: 12px; font-weight: 500;
+    border: none; cursor: pointer; background: transparent;
+    color: #aaa; border-top: 2px solid transparent;
+    transition: all 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .tab.active { color: #1c1c1e; border-top-color: #1c1c1e; }
+  .tab-icon { font-size: 20px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="status-bar">
+    <span id="sb-time"></span>
+    <span id="sb-date"></span>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="header">
+      <div class="header-title">出発前チェック</div>
+      <div class="header-sub">写真を撮って確認してから出発しよう</div>
+    </div>
+    <div class="content">
+      <div class="section-label">ガスコンロの写真</div>
+      <div class="photo-box" id="photo-box" onclick="document.getElementById('file-input').click()">
+        <div class="photo-cam" id="photo-cam">📷</div>
+        <div class="photo-hint" id="photo-hint">タップして撮影</div>
+        <img id="preview-img" style="display:none;" alt="ガスコンロの写真" />
+        <div class="photo-overlay" id="photo-overlay" style="display:none;"></div>
+        <div class="photo-stamp" id="photo-stamp-home" style="display:none;">
+          <div><div class="photo-stamp-label">ガスコンロ</div><div class="photo-stamp-dt" id="home-stamp-dt"></div></div>
+        </div>
+        <button class="retake-btn" id="retake-btn" style="display:none;" onclick="retake(event)">撮り直す</button>
+        <div class="saved-badge" id="saved-badge" style="display:none;">前回の写真</div>
+      </div>
+      <input type="file" id="file-input" accept="image/*" onchange="onPhoto(event)">
+
+      <div class="check-section">
+        <div class="section-label" style="margin-top:20px;">確認</div>
+        <div class="check-item" id="check-item" onclick="toggleCheck()">
+          <div class="check-circle" id="check-circle"></div>
+          <span class="check-text">ガスコンロの火を消した</span>
+        </div>
+      </div>
+    </div>
+    <div class="cta">
+      <button class="btn-main" id="btn-exit" disabled onclick="goToDone()">出発する</button>
+      <div class="cta-hint" id="cta-hint">写真撮影とチェックが必要です</div>
+    </div>
+  </div>
+
+  <!-- DONE -->
+  <div class="screen" id="screen-done">
+    <div class="done-hero">
+      <div class="done-icon">✅</div>
+      <div class="done-title">確認しました</div>
+      <div class="done-sub">安心して出かけられます。<br>外出後もこの記録で確認できます。</div>
+    </div>
+    <div class="proof-section">
+      <div class="proof-card">
+        <div class="proof-photo" id="done-photo-wrap" style="display:none;">
+          <img id="done-img" alt="ガスコンロの写真" />
+          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.6),transparent);padding:10px 14px;">
+            <div style="color:rgba(255,255,255,0.7);font-size:11px;">ガスコンロ</div>
+            <div style="color:#fff;font-size:13px;font-weight:500;" id="done-stamp-dt"></div>
+          </div>
+        </div>
+        <div class="proof-rows">
+          <div class="proof-row"><span class="proof-key">ガスコンロの火</span><span class="proof-val">✓ 消火確認済み</span></div>
+          <div class="proof-row"><span class="proof-key">確認日時</span><span class="proof-val" id="proof-dt">—</span></div>
+          <div class="proof-row"><span class="proof-key">写真</span><span class="proof-val" id="proof-photo-status">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-review-wrap">
+      <button class="btn-review" onclick="switchTab('review')">外出後に確認する →</button>
+    </div>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="screen" id="screen-review">
+    <!-- 記録あり -->
+    <div id="review-content" style="display:none; flex-direction:column; flex:1;">
+      <div class="review-hero">
+        <div class="review-big">✅</div>
+        <div class="review-title">大丈夫です、消してあります</div>
+        <div class="review-dt" id="review-dt-txt"></div>
+      </div>
+      <div class="review-body">
+        <div class="review-photo-frame" id="review-photo-frame" style="display:none;">
+          <img id="review-img" alt="ガスコンロの写真" />
+          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.6),transparent);padding:10px 14px;">
+            <div style="color:rgba(255,255,255,0.7);font-size:11px;">出発前に撮影</div>
+            <div style="color:#fff;font-size:13px;font-weight:500;" id="review-stamp-dt"></div>
+          </div>
+        </div>
+        <div class="review-row">
+          <span class="review-check-icon">✓</span>
+          <span>ガスコンロの火：消火確認済み</span>
+        </div>
+        <button class="btn-secondary" onclick="switchTab('home')">新しく確認する</button>
+      </div>
+    </div>
+    <!-- 記録なし -->
+    <div class="no-record" id="review-empty" style="display:none;">
+      <div class="no-record-icon">📋</div>
+      <div class="no-record-text">まだ確認記録がありません。<br>出発前にチェックしてから<br>こちらで振り返れます。</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" id="tab-home" onclick="switchTab('home')">
+      <span class="tab-icon">☑️</span>チェック
+    </button>
+    <button class="tab" id="tab-review" onclick="switchTab('review')">
+      <span class="tab-icon">🔍</span>外出後に確認
+    </button>
+  </div>
+</div>
+
+<script>
+const LS_PHOTO = 'firecheck_photo';
+const LS_DATETIME = 'firecheck_datetime';
+
+let photoDataUrl = null;
+let isChecked = false;
+let doneTime = null;
+
+/* ---- Utils ---- */
+function fmtDatetime(d) {
+  const week = ['日','月','火','水','木','金','土'];
+  return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() +
+    '(' + week[d.getDay()] + ') ' +
+    d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function fmtTime(d) { return d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function fmtDateShort(d) {
+  const week = ['日','月','火','水','木','金','土'];
+  return (d.getMonth()+1) + '/' + d.getDate() + '(' + week[d.getDay()] + ')';
+}
+
+/* ---- Status bar ---- */
+function updateStatusBar() {
+  const now = new Date();
+  document.getElementById('sb-time').textContent = fmtTime(now);
+  document.getElementById('sb-date').textContent = fmtDateShort(now);
+}
+updateStatusBar();
+setInterval(updateStatusBar, 15000);
+
+/* ---- Photo ---- */
+function showPhotoUI(src, isSaved, dt) {
+  const img = document.getElementById('preview-img');
+  img.src = src; img.style.display = 'block';
+  document.getElementById('photo-cam').style.display = 'none';
+  document.getElementById('photo-hint').style.display = 'none';
+  document.getElementById('photo-overlay').style.display = 'block';
+  document.getElementById('photo-stamp-home').style.display = 'flex';
+  document.getElementById('retake-btn').style.display = 'block';
+  document.getElementById('saved-badge').style.display = isSaved ? 'block' : 'none';
+  document.getElementById('photo-box').classList.add('has-photo');
+  if (dt) document.getElementById('home-stamp-dt').textContent = fmtDatetime(dt);
+}
+
+function onPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    photoDataUrl = ev.target.result;
+    try { localStorage.setItem(LS_PHOTO, photoDataUrl); } catch(err) { console.warn('Storage full', err); }
+    showPhotoUI(photoDataUrl, false, new Date());
+    updateBtn();
+  };
+  reader.readAsDataURL(file);
+}
+
+function retake(e) {
+  e.stopPropagation();
+  document.getElementById('file-input').click();
+}
+
+/* ---- Check ---- */
+function toggleCheck() {
+  isChecked = !isChecked;
+  document.getElementById('check-item').classList.toggle('checked', isChecked);
+  document.getElementById('check-circle').textContent = isChecked ? '✓' : '';
+  updateBtn();
+}
+
+function updateBtn() {
+  const ready = photoDataUrl && isChecked;
+  document.getElementById('btn-exit').disabled = !ready;
+  const hint = document.getElementById('cta-hint');
+  if (ready) hint.textContent = '準備完了です';
+  else if (!photoDataUrl && !isChecked) hint.textContent = '写真撮影とチェックが必要です';
+  else if (!photoDataUrl) hint.textContent = '写真を撮ってください';
+  else hint.textContent = 'チェックを入れてください';
+}
+
+/* ---- Done ---- */
+function goToDone() {
+  doneTime = new Date();
+  try { localStorage.setItem(LS_DATETIME, doneTime.toISOString()); } catch(err) {}
+
+  const dt = fmtDatetime(doneTime);
+  document.getElementById('done-stamp-dt').textContent = dt;
+  document.getElementById('proof-dt').textContent = dt;
+
+  if (photoDataUrl) {
+    document.getElementById('done-img').src = photoDataUrl;
+    document.getElementById('done-photo-wrap').style.display = 'block';
+    document.getElementById('proof-photo-status').textContent = '撮影済み';
+  } else {
+    document.getElementById('proof-photo-status').textContent = 'なし';
+  }
+  switchTab('home'); // will show done screen
+  showScreen('done');
+  setTabActive('home');
+}
+
+/* ---- Review ---- */
+function renderReview() {
+  const savedPhoto = (() => { try { return localStorage.getItem(LS_PHOTO); } catch(e) { return null; } })();
+  const savedDt = (() => { try { return localStorage.getItem(LS_DATETIME); } catch(e) { return null; } })();
+
+  const photo = photoDataUrl || savedPhoto;
+  const dt = doneTime || (savedDt ? new Date(savedDt) : null);
+
+  const content = document.getElementById('review-content');
+  const empty = document.getElementById('review-empty');
+
+  if (!photo && !dt) {
+    content.style.display = 'none';
+    empty.style.display = 'flex';
+    return;
+  }
+
+  content.style.display = 'flex';
+  empty.style.display = 'none';
+
+  const dtStr = dt ? fmtDatetime(dt) : '';
+  document.getElementById('review-dt-txt').textContent = dtStr ? dtStr + ' に確認済み' : '';
+  document.getElementById('review-stamp-dt').textContent = dtStr;
+
+  if (photo) {
+    document.getElementById('review-img').src = photo;
+    document.getElementById('review-photo-frame').style.display = 'block';
+  } else {
+    document.getElementById('review-photo-frame').style.display = 'none';
+  }
+}
+
+/* ---- Navigation ---- */
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function setTabActive(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function switchTab(name) {
+  setTabActive(name);
+  if (name === 'review') {
+    renderReview();
+    showScreen('review');
+  } else {
+    const hasDone = (() => { try { return localStorage.getItem(LS_DATETIME); } catch(e){ return null; } })();
+    if (doneTime || hasDone) {
+      showScreen('done');
+    } else {
+      showScreen('home');
+    }
+  }
+}
+
+/* ---- Init: load saved data ---- */
+(function init() {
+  const savedPhoto = (() => { try { return localStorage.getItem(LS_PHOTO); } catch(e) { return null; } })();
+  const savedDt = (() => { try { return localStorage.getItem(LS_DATETIME); } catch(e) { return null; } })();
+
+  if (savedPhoto) {
+    photoDataUrl = savedPhoto;
+    const dt = savedDt ? new Date(savedDt) : null;
+    showPhotoUI(savedPhoto, true, dt);
+  }
+  if (savedDt) {
+    doneTime = new Date(savedDt);
+  }
+  updateBtn();
+})();
+</script>
+</body>
+</html>
