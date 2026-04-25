@@ -581,25 +581,20 @@ function switchTab(name) {
   });
 
   document.getElementById('btn-camera').addEventListener('click', async function() {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      const modal = document.getElementById('camera-modal');
-      modal.style.display = 'flex';
-      modal.style.flexDirection = 'column';
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } },
-          audio: false
-        });
-        window._cameraStream = stream;
-        const video = document.getElementById('camera-video');
-        video.srcObject = stream;
-        video.play();
-      } catch(err) {
-        modal.style.display = 'none';
-        document.getElementById('file-camera-input').click();
-      }
-    } else {
-      document.getElementById('file-camera-input').click();
+    const modal = document.getElementById('camera-modal');
+    modal.style.display = 'flex';
+    modal.style.flexDirection = 'column';
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false
+      });
+      window._cameraStream = stream;
+      const video = document.getElementById('camera-video');
+      video.srcObject = stream;
+    } catch(err) {
+      modal.style.display = 'none';
+      alert("カメラを起動できませんでした: " + err.message);
     }
   });
 
